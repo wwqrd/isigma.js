@@ -1,3 +1,5 @@
+iSigma.js is a fork of:
+
 <img src="http://sigmajs.org/img/sigmajs.png"></img>
 
 *sigma.js* is a free and open-source JavaScript library to draw graphs, using the HTML5 canvas element. It has been especially designed to share interactive network maps on a Web page or to explore dynamically a network database. It is distributed under the [MIT License](https://github.com/jacomyal/sigma.js/blob/master/LICENSE.txt).
