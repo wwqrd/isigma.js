@@ -76,9 +76,6 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, hoverCtx, graph, w, h) {
     //   Label size:
     //   - 'fixed'
     //   - 'proportional'
-    //   Label size:
-    //   - 'fixed'
-    //   - 'proportional'
     labelSize: 'fixed',
     defaultLabelSize: 12, // for fixed display only
     labelSizeRatio: 2,    // for proportional display only
@@ -100,6 +97,13 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, hoverCtx, graph, w, h) {
     edgeColor: 'source',
     defaultEdgeColor: '#aaa',
     defaultEdgeType: 'line',
+    //   Oriented Edges:
+    //   - true
+    //   - false
+    //   - default (then defaultEdgeColor or edge['color']
+    //              will be used instead)
+    //TODO
+
     // ------
     // NODES:
     // ------
@@ -326,27 +330,90 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, hoverCtx, graph, w, h) {
 
     var ctx = edgesCtx;
 
-    switch (edge['type'] || self.p.defaultEdgeType) {
+    ctx.arrow = function(locx, locy, angle, sizex, sizey) {
+      var hx = sizex / 2;
+      var hy = sizey / 2;
+      this.fillStyle = color || self.p.defaultEdgeColor;
+      this.translate((locx ), (locy));
+      this.rotate(angle);
+      this.translate(-hx,-hy);
+
+      this.beginPath();
+      this.moveTo(0,0);
+      this.lineTo(0,1*sizey);    
+      this.lineTo(1*sizex,1*hy);
+      this.closePath();
+      this.fill();
+      this.translate(hx,hy);
+      this.rotate(-angle);
+      this.translate(-locx,-locy);
+    }
+
+    function findAngle(sx, sy, ex, ey) {
+      return Math.atan2(ey - sy, ex - sx);
+    }
+
+    var width = edge['displaySize'] / 3;
+
+    //FIXME: Handle bidi edges
+    switch (graph.edgeType || self.p.defaultEdgeType) {
       case 'curve':
         ctx.strokeStyle = color;
         ctx.lineWidth = edge['displaySize'] / 3;
         ctx.beginPath();
+
+        var xi = (x1 + x2) / 2 + (y2 - y1) / 4;
+        var yi = (y1 + y2) / 2 + (x1 - x2) / 4;
+
+        if(graph.oriented){
+          var r = Math.round(edge['target']['displaySize'] * 10) / 10 + 2 + 3/2 * width;
+          var L = Math.sqrt(Math.pow(x2 - xi, 2) + Math.pow(y2 - yi, 2));
+          var dx = Math.round((x2 - xi) * r / L);
+          var dy = Math.round((y2 - yi) * r / L);
+          
+          x2 = x2 - dx;
+          y2 = y2 - dy;
+        }
+        
         ctx.moveTo(x1, y1);
-        ctx.quadraticCurveTo((x1 + x2) / 2 + (y2 - y1) / 4,
-                             (y1 + y2) / 2 + (x1 - x2) / 4,
+        ctx.quadraticCurveTo(xi,
+                             yi,
                              x2,
                              y2);
         ctx.stroke();
+        if(graph.oriented){
+          ctx.arrow(x2,
+                    y2,
+                    findAngle(xi, yi, x2, y2),
+                    3 * width,
+                    3 * width);
+        }
         break;
       case 'line':
       default:
         ctx.strokeStyle = color;
         ctx.lineWidth = edge['displaySize'] / 3;
         ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
 
+        if(graph.oriented){
+          var r = Math.round(edge['target']['displaySize'] * 10) / 10 + 2 + 3/2 * width;
+          var L = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+          var dx = Math.round((x2 - x1) * r / L);
+          var dy = Math.round((y2 - y1) * r / L);
+          x2 = x2 - dx;
+          y2 = y2 - dy;
+        }
+
+        ctx.moveTo(x1, y1); 
+        ctx.lineTo(x2, y2);
         ctx.stroke();
+        if(graph.oriented){
+          ctx.arrow(x2,
+                    y2,
+                    findAngle(x1, y1, x2, y2),
+                    3 * width,
+                    3 * width);
+        }
         break;
     }
 

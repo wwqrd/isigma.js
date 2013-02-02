@@ -160,7 +160,13 @@ function MouseCaptor(dom) {
    * @param  {event} event A 'down' mouse event.
    */
   function downHandler(event) {
-    if (self.p.mouseEnabled) {
+    if (!self.p.mouseEnabled)
+      return;
+
+    if(event.ctrlKey || event.metaKey){
+      self.dispatch('ctrlclick');
+    } else {
+
       self.isMouseDown = true;
       oldMouseX = self.mouseX;
       oldMouseY = self.mouseY;
@@ -168,13 +174,14 @@ function MouseCaptor(dom) {
       self.dispatch('mousedown');
 
       startDrag();
-
-      if (event.preventDefault) {
-        event.preventDefault();
-      } else {
-        event.returnValue = false;
-      }
     }
+  
+    if (event.preventDefault) {
+      event.preventDefault();
+    } else {
+      event.returnValue = false;
+    }
+    
   };
 
   /**

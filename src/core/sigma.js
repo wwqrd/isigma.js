@@ -132,7 +132,7 @@ function Sigma(root, id) {
       self.p.auto ? 2 : self.p.drawLabels,
       true
     );
-  }).bind('mousedown mouseup', function(e) {
+  }).bind('mousedown mouseup ctrlclick', function(e) {
     var targeted = self.graph.nodes.filter(function(n) {
       return !!n['hover'];
     }).map(function(n) {
@@ -145,11 +145,17 @@ function Sigma(root, id) {
         'upgraph'
     );
 
+    var eventType;
+    if(e['type'] == 'ctrlclick')
+      eventType = 'ctrlclicknodes';
+    else if(e['type'] == 'mousedown')
+      eventType = 'downnodes';
+    else
+      eventType = 'upnodes';
+
     if (targeted.length) {
       self.dispatch(
-        e['type'] == 'mousedown' ?
-          'downnodes' :
-          'upnodes',
+        eventType,
         targeted
       );
     }
