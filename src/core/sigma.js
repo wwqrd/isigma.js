@@ -145,15 +145,32 @@ function Sigma(root, id) {
         'upgraph'
     );
 
-    var eventType;
-    if(e['type'] == 'ctrlclick')
-      eventType = 'ctrlclicknodes';
-    else if(e['type'] == 'mousedown')
-      eventType = 'downnodes';
-    else
-      eventType = 'upnodes';
+    if (targeted.length) {
+      var eventType;
+      if(e['type'] == 'ctrlclick')
+        eventType = 'ctrlclicknodes';
+      else if(e['type'] == 'mousedown')
+        eventType = 'downnodes';
+      else
+        eventType = 'upnodes';
+
+      self.dispatch(
+        eventType,
+        targeted
+      );
+    }
+  }).bind('rightclick dblclick', function(e) {
+    var targeted = self.graph.nodes.filter(function(n) {
+      return !!n['hover'];
+    }).map(function(n) {
+      return n.id;
+    });
 
     if (targeted.length) {
+      var eventType = 'rightclicknodes';
+      if(e['type'] == 'dblclick')
+        eventType = 'dblclicknodes';
+
       self.dispatch(
         eventType,
         targeted

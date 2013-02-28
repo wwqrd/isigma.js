@@ -64,6 +64,8 @@ function MouseCaptor(dom) {
   var progress = 0;
   var isZooming = false;
 
+  var dblClickLatency = 800
+
   this.stageX = 0;
   this.stageY = 0;
   this.ratio = 1;
@@ -72,6 +74,7 @@ function MouseCaptor(dom) {
   this.mouseY = 0;
 
   this.isMouseDown = false;
+  this.oldTimeMouseDown = Date.now();
 
   /**
    * Extract the local X position from a mouse event.
@@ -153,9 +156,12 @@ function MouseCaptor(dom) {
   };
 
   /**
-   * The handler listening to the 'down' mouse event. It will set the
-   * isMouseDown value as true, dispatch a 'mousedown' event, and trigger
-   * startDrag().
+   * The handler listening to the 'down' mouse event. 
+   * If there is a double click event, dispatch a 'dblclick' event.
+   * If the Ctrl or Meta key is pressed, dispatch a 'ctrlclick' event.
+   * If the center or the right mouse button is used, dispatch a
+   * 'rightclick' event. Otherwise it will set the isMouseDown value as
+   * true, dispatch a 'mousedown' event, and trigger startDrag().
    * @private
    * @param  {event} event A 'down' mouse event.
    */
@@ -163,17 +169,45 @@ function MouseCaptor(dom) {
     if (!self.p.mouseEnabled)
       return;
 
+    // Detect double-click
+    var timeMouseDown = Date.now();
+    if (timeMouseDown - self.oldTimeMouseDown < dblClickLatency) {
+      self.dispatch('dblclick');
+    } else {
+      self.oldTimeMouseDown = timeMouseDown;
+    }
+
     if(event.ctrlKey || event.metaKey){
       self.dispatch('ctrlclick');
     } else {
+      switch (event.which) {
+        case 1:
+          //console.log('Left mouse button pressed');
+          self.isMouseDown = true;
+          oldMouseX = self.mouseX;
+          oldMouseY = self.mouseY;
 
-      self.isMouseDown = true;
-      oldMouseX = self.mouseX;
-      oldMouseY = self.mouseY;
+          self.dispatch('mousedown');
 
-      self.dispatch('mousedown');
+          startDrag();
+          break;
+        case 2:
+          //console.log("Middle mouse button pressed");
+          self.dispatch('rightclick');
+          break;
+        case 3:
+          //console.log("Right mouse button pressed");
+          self.dispatch('rightclick');
+          break;
+        default:
+          self.isMouseDown = true;
+          oldMouseX = self.mouseX;
+          oldMouseY = self.mouseY;
 
-      startDrag();
+          self.dispatch('mousedown');
+
+          startDrag();
+      }
     }
   
     if (event.preventDefault) {
