@@ -20,6 +20,7 @@
   <link rel="stylesheet" href="css/bootstrap.min.css">
   <link rel="stylesheet" href="css/bootstrap-responsive.min.css">
 
+  <script src="js/jquery.min.js"></script>
   <script src="../build/sigma.min.js"></script>
 
 </head>
@@ -107,6 +108,7 @@
     sigInst.position(0,0,1).draw();
   },true);
 
+  $('body').on('contextmenu', 'canvas', function(e){ return false; });
   sigInst.bind('rightclicknodes dblclicknodes', function(e) {
     console.log(e.type, e.content);
   });

@@ -64,7 +64,7 @@ function MouseCaptor(dom) {
   var progress = 0;
   var isZooming = false;
 
-  var dblClickLatency = 800
+  var doubleClickLatency = 400
 
   this.stageX = 0;
   this.stageY = 0;
@@ -171,7 +171,7 @@ function MouseCaptor(dom) {
 
     // Detect double-click
     var timeMouseDown = Date.now();
-    if (timeMouseDown - self.oldTimeMouseDown < dblClickLatency) {
+    if (timeMouseDown - self.oldTimeMouseDown < doubleClickLatency) {
       self.dispatch('dblclick');
     } else {
       self.oldTimeMouseDown = timeMouseDown;
@@ -215,7 +215,6 @@ function MouseCaptor(dom) {
     } else {
       event.returnValue = false;
     }
-    
   };
 
   /**
