@@ -496,7 +496,7 @@ function Graph() {
 
     // Rescale the nodes:
     parseNodes && self.nodes.forEach(function(node) {
-      node['displaySize'] = node['size'] * a + b;
+      node['displaySize'] = Math.sqrt((node['size'] * a + b) / Math.PI);
 
       if (!node['fixed']) {
         node['displayX'] = node['x'];

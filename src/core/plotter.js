@@ -282,6 +282,7 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, hoverCtx, graph, w, h) {
    */
   function drawNode(node) {
     var size = Math.round(node['displaySize'] * 10) / 10;
+    //var radius = Math.sqrt(size / Math.PI) * 8;
     var ctx = nodesCtx;
 
     ctx.fillStyle = node['color'];
