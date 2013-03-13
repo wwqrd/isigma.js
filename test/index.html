@@ -48,7 +48,9 @@
   // Instanciate sigma.js and customize it :
   var sigInst = sigma.init(document.getElementById('sigma-example')).drawingProperties({
     defaultLabelColor: '#fff'
-  });
+  }).graphProperties({
+            maxNodeSize: 30,
+          });
 
   // Generate a random graph with :
   //   . N nodes

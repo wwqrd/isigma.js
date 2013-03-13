@@ -542,6 +542,28 @@ function Graph() {
     return self;
   };
 
+
+  /**
+  * Translate the x and y coordinates of the given nodes.
+  * @param  {(Array.<string>)} nodeids An Array of several node IDs
+  * @param  {number} dX     The x translation of the nodes.
+  * @param  {number} dY     The y translation of the nodes.
+  * @param  {number} sceneX The x position of the scene.
+  * @param  {number} sceneY The y position of the scene.
+  * @param  {number} ratio  The zoom ratio of the scene.
+  * @return {Graph} Returns itself.
+  */
+  function translateNodes(nodeids, dX, dY, sceneX, sceneY, ratio) {
+    nodeids.forEach(function(nodeid) {
+      var node = self.nodesIndex[nodeid];
+      node['x'] = (node['displayX'] - sceneX + dX) / ratio;
+      node['y'] = (node['displayY'] - sceneY + dY) / ratio;
+    });
+
+    return self;
+  };
+
+
   /**
    * Determines the borders of the graph as it will be drawn. It is used to
    * avoid the user to drag the graph out of the canvas.
@@ -703,6 +725,7 @@ function Graph() {
   this.empty = empty;
   this.rescale = rescale;
   this.translate = translate;
+  this.translateNodes = translateNodes;
   this.setBorders = setBorders;
   this.checkHover = checkHover;
 }

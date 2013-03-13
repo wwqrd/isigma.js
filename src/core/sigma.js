@@ -23,6 +23,18 @@ function Sigma(root, id) {
   var self = this;
 
   /**
+   * Last event type dispatched. Used by interaction listeners.
+   * @private
+   */
+  var eventType;
+
+  /**
+   * Last nodes detected under the mouse pointer. Used by interaction listeners.
+   * @private
+   */
+  var targeted;
+
+  /**
    * The ID of the instance.
    * @type {string}
    */
@@ -133,26 +145,31 @@ function Sigma(root, id) {
       true
     );
   }).bind('mousedown mouseup ctrlclick', function(e) {
-    var targeted = self.graph.nodes.filter(function(n) {
+    targeted = self.graph.nodes.filter(function(n) {
       return !!n['hover'];
     }).map(function(n) {
       return n.id;
     });
 
-    self.dispatch(
-      e['type'] == 'mousedown' ?
-        'downgraph' :
-        'upgraph'
-    );
+    eventType = 'upgraph';
+    if (e['type'] == 'mousedown') {
+      eventType = 'downgraph';
+    }
+    self.dispatch(eventType);
 
     if (targeted.length) {
-      var eventType;
       if(e['type'] == 'ctrlclick')
         eventType = 'ctrlclicknodes';
       else if(e['type'] == 'mousedown')
         eventType = 'downnodes';
-      else
+      else {
         eventType = 'upnodes';
+        self.draw(
+          self.p.auto ? -1 : self.p.drawNodes,
+          self.p.auto ? 1 : self.p.drawEdges,
+          self.p.auto ? -1 : self.p.drawLabels
+        );
+      }
 
       self.dispatch(
         eventType,
@@ -160,14 +177,14 @@ function Sigma(root, id) {
       );
     }
   }).bind('rightclick dblclick', function(e) {
-    var targeted = self.graph.nodes.filter(function(n) {
+    targeted = self.graph.nodes.filter(function(n) {
       return !!n['hover'];
     }).map(function(n) {
       return n.id;
     });
 
     if (targeted.length) {
-      var eventType = 'rightclicknodes';
+      eventType = 'rightclicknodes';
       if(e['type'] == 'dblclick')
         eventType = 'dblclicknodes';
 
@@ -176,16 +193,34 @@ function Sigma(root, id) {
         targeted
       );
     }
-  }).bind('move', function() {
-    self.domElements.hover.getContext('2d').clearRect(
-      0,
-      0,
-      self.domElements.hover.width,
-      self.domElements.hover.height
-    );
-
-    drawHover();
-    drawActive();
+  }).bind('move', function(e) {
+    if (eventType == 'downgraph') {
+      self.mousecaptor.drag();
+      self.refresh();
+    }
+    else if (eventType == 'downnodes') {
+      self.graph.translateNodes(
+        targeted,
+        e.content['dX'],
+        e.content['dY'],
+        e.content['stageX'],
+        e.content['stageY'],
+        e.content['ratio']
+      );
+      self.domElements.hover.getContext('2d').clearRect(
+        0,
+        0,
+        self.domElements.hover.width,
+        self.domElements.hover.height
+      );
+      self.draw(
+        self.p.auto ? 2 : self.p.drawNodes,
+        self.p.auto ? 0 : self.p.drawEdges,
+        self.p.auto ? 2 : self.p.drawLabels
+      );
+    } else {
+      self.refresh();
+    }
   });
 
   sigma.chronos.bind('startgenerators', function() {

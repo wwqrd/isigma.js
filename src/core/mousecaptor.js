@@ -45,8 +45,8 @@ function MouseCaptor(dom) {
 
   var oldMouseX = 0;
   var oldMouseY = 0;
-  var startX = 0;
-  var startY = 0;
+  self.startX = 0;
+  self.startY = 0;
 
   var oldStageX = 0;
   var oldStageY = 0;
@@ -64,7 +64,8 @@ function MouseCaptor(dom) {
   var progress = 0;
   var isZooming = false;
 
-  var doubleClickLatency = 400
+  var doubleClickLatency = 400;
+  var oldTimeMouseDown = Date.now();
 
   this.stageX = 0;
   this.stageY = 0;
@@ -74,7 +75,6 @@ function MouseCaptor(dom) {
   this.mouseY = 0;
 
   this.isMouseDown = false;
-  this.oldTimeMouseDown = Date.now();
 
   /**
    * Extract the local X position from a mouse event.
@@ -125,8 +125,16 @@ function MouseCaptor(dom) {
     self.mouseX = getX(event);
     self.mouseY = getY(event);
 
-    self.isMouseDown && drag(event);
-    self.dispatch('move');
+    var dX = self.mouseX - oldMouseX;
+    var dY = self.mouseY - oldMouseY;
+
+    // self.isMouseDown && drag(event);
+    self.dispatch('move', {
+      'dX': dX, 
+      'dY': dY,
+      'stageX': self.stageX,
+      'stageY': self.stageY,
+      'ratio': self.ratio});
 
     if (event.preventDefault) {
       event.preventDefault();
@@ -171,10 +179,10 @@ function MouseCaptor(dom) {
 
     // Detect double-click
     var timeMouseDown = Date.now();
-    if (timeMouseDown - self.oldTimeMouseDown < doubleClickLatency) {
+    if (timeMouseDown - oldTimeMouseDown < doubleClickLatency) {
       self.dispatch('dblclick');
     } else {
-      self.oldTimeMouseDown = timeMouseDown;
+      oldTimeMouseDown = timeMouseDown;
     }
 
     if(event.ctrlKey || event.metaKey){
@@ -250,8 +258,8 @@ function MouseCaptor(dom) {
   function startDrag() {
     oldStageX = self.stageX;
     oldStageY = self.stageY;
-    startX = self.mouseX;
-    startY = self.mouseY;
+    self.startX = self.mouseX;
+    self.startY = self.mouseY;
 
     lastStageX = self.stageX;
     lastStageX2 = self.stageX;
@@ -278,8 +286,8 @@ function MouseCaptor(dom) {
    * dispatches a "drag" event.
    */
   function drag() {
-    var newStageX = self.mouseX - startX + oldStageX;
-    var newStageY = self.mouseY - startY + oldStageY;
+    var newStageX = self.mouseX - self.startX + oldStageX;
+    var newStageY = self.mouseY - self.startY + oldStageY;
 
     if (newStageX != self.stageX || newStageY != self.stageY) {
       lastStageX2 = lastStageX;
@@ -446,5 +454,6 @@ function MouseCaptor(dom) {
 
   this.checkBorders = checkBorders;
   this.interpolate = startInterpolate;
+  this.drag = drag;
 }
 
