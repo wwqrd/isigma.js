@@ -48,6 +48,15 @@ sigma.tools.drawRoundRect = function(ctx, x, y, w, h, ellipse, corners) {
   ctx.lineTo(x, y + e);
 };
 
+sigma.tools.drawTriRect = function(ctx, x, y, w, h, spike) {
+  ctx.moveTo(x, y + h * 0.5);
+  ctx.lineTo(x + spike, y + h);
+  ctx.lineTo(x + w, y + h);
+  ctx.lineTo(x + w, y);
+  ctx.lineTo(x + spike, y);
+  ctx.lineTo(x, y + h * 0.5);
+};
+
 sigma.tools.getRGB = function(s, asArray) {
   s = s.toString();
   var res = {

@@ -46,11 +46,15 @@
 
 <script src="../plugins/sigma.forceatlas2.js"></script><script type="text/javascript">function init() {
   // Instanciate sigma.js and customize it :
-  var sigInst = sigma.init(document.getElementById('sigma-example')).drawingProperties({
-    defaultLabelColor: '#fff'
+  var sigInst = sigma.init(document.getElementById('sigma-example')).configProperties({
+    drawHoverEdges: true,
+  }).drawingProperties({
+    defaultLabelColor: '#fff',
+    edgeHoverSizeRatio: 4,
+    edgeColor: 'default',
   }).graphProperties({
-            maxNodeSize: 30,
-          });
+    maxNodeSize: 30,
+  });
 
   // Generate a random graph with :
   //   . N nodes
@@ -58,7 +62,7 @@
   //   . C clusters
   //   . d the proportion of edges that connect two nodes
   //     from the same cluster
-  var i, N = 50, E = 300, C = 5, d = 0.5, clusters = [];
+  var i, N = 50, E = 30, C = 5, d = 0.5, clusters = [];
   for(i = 0; i < C; i++){
     clusters.push({
       'id': i,

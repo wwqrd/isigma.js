@@ -206,7 +206,7 @@ function SigmaPublic(sigmaInstance) {
     self.dispatch(e.type, e.content);
   });
 
-  s.graph.bind('overnodes outnodes', function(e) {
+  s.graph.bind('overnodes outnodes overedges outedges', function(e) {
     self.dispatch(e.type, e.content);
   });
 }

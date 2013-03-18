@@ -54,7 +54,8 @@ function Sigma(root, id) {
     lastEdges: 0,
     lastLabels: 2,
     drawHoverNodes: true,
-    drawActiveNodes: true
+    drawActiveNodes: true,
+    drawHoverEdges: false
   };
 
   /**
@@ -487,7 +488,7 @@ function Sigma(root, id) {
   }
 
   /**
-   * Draws the hover nodes labels. This method is applied directly, and does
+   * Draws the hover nodes and edges labels. This method is applied directly, and does
    * not use the pseudo-asynchronous tasks process.
    * @return {Sigma} Returns itself.
    */
@@ -497,7 +498,26 @@ function Sigma(root, id) {
         self.mousecaptor.mouseX,
         self.mousecaptor.mouseY
       );
+    }
 
+    if (self.p.drawHoverEdges) {
+      self.graph.checkHoverEdge(
+        self.mousecaptor.mouseX,
+        self.mousecaptor.mouseY,
+        self.mousecaptor.ratio,
+        self.p.defaultEdgeType
+      );
+
+      self.graph.edges.forEach(function(edge) {
+        if (edge.hover && !edge.active) {
+          self.plotter.drawHoverEdge(edge);
+          edge['source']['hover'] = true;
+          edge['target']['hover'] = true;
+        }
+      });
+    }
+
+    if (self.p.drawHoverNodes) {
       self.graph.nodes.forEach(function(node) {
         if (node.hover && !node.active) {
           self.plotter.drawHoverNode(node);

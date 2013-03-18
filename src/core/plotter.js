@@ -48,6 +48,11 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, hoverCtx, graph, w, h) {
     //   - default (then defaultHoverLabelBGColor
     //              will be used instead)
     labelHoverBGColor: 'default',
+    //   Label hover background color:
+    //   - 'edge'
+    //   - default (then defaultHoverLabelBGColor
+    //              will be used instead)
+    edgeLabelHoverBGColor: 'default',
     defaultHoverLabelBGColor: '#fff',
     //   Label hover shadow:
     labelHoverShadow: true,
@@ -96,6 +101,7 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, hoverCtx, graph, w, h) {
     //              will be used instead)
     edgeColor: 'source',
     defaultEdgeColor: '#aaa',
+    defaultEdgeHoverColor: '#aaa',
     defaultEdgeType: 'line',
     //   Oriented Edges:
     //   - true
@@ -103,6 +109,7 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, hoverCtx, graph, w, h) {
     //   - default (then defaultEdgeColor or edge['color']
     //              will be used instead)
     //TODO
+    edgeHoverSizeRatio: 2,  // for the edge thickness on mouse hover
 
     // ------
     // NODES:
@@ -540,6 +547,184 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, hoverCtx, graph, w, h) {
   };
 
   /**
+   * Draws one hover edge to the corresponding canvas.
+   * @param  {Object} edge The hover edge to draw.
+   * @return {Plotter} Returns itself.
+   */
+  function drawHoverEdge(edge) {
+    var ctx = hoverCtx;
+
+    var x1 = edge['source']['displayX'];
+    var y1 = edge['source']['displayY'];
+    var x2 = edge['target']['displayX'];
+    var y2 = edge['target']['displayY'];
+    var color = edge['color'];
+
+    if (!color) {
+      switch (self.p.edgeColor) {
+        case 'source':
+          color = edge['source']['color'] ||
+                  self.p.defaultNodeColor;
+          break;
+        case 'target':
+          color = edge['target']['color'] ||
+                  self.p.defaultNodeColor;
+          break;
+        default:
+          color = self.p.defaultEdgeHoverColor;
+          break;
+      }
+    }
+
+    var fontSize = self.p.labelSize == 'fixed' ?
+                   self.p.defaultLabelSize :
+                   self.p.labelSizeRatio * edge['displaySize'];
+
+    ctx.font = (self.p.hoverFontStyle || self.p.fontStyle || '') + ' ' +
+               fontSize + 'px ' +
+               (self.p.hoverFont || self.p.font || '');
+
+    ctx.fillStyle = self.p.edgeLabelHoverBGColor == 'edge' ?
+                    (edge['color'] || self.p.defaultEdgeHoverColor) :
+                    self.p.defaultHoverLabelBGColor;
+
+    if (edge['label'] != undefined && edge['label'].length) {
+      // console.log(edge['label']);
+
+      // Label background:
+      ctx.beginPath();
+
+      if (self.p.labelHoverShadow) {
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+        ctx.shadowBlur = 4;
+        ctx.shadowColor = self.p.labelHoverShadowColor;
+      }
+
+      // case 'line'
+      var labelX = (x1 + x2) / 2;
+      var labelY = (y1 + y2) / 2;
+
+      sigma.tools.drawTriRect(
+        ctx,
+        Math.round(labelX),
+        Math.round(labelY),
+        Math.round(ctx.measureText(edge['label']).width +
+          edge['displaySize'] * 1.5 +
+          fontSize / 2 + 4),
+        Math.round(fontSize + 4),
+        Math.round(fontSize / 2 + 2)
+      );
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+      ctx.shadowBlur = 0;
+
+      // Label:
+      ctx.fillStyle = self.p.edgeLabelHoverColor == 'edge' ?
+                      (edge['color'] || self.p.defaultEdgeHoverColor) :
+                      self.p.defaultLabelHoverColor;
+      ctx.fillText(
+        edge['label'],
+        Math.round(labelX + 10),
+        Math.round(labelY + fontSize)
+      );
+    }
+
+    // Arrow:
+    ctx.arrow = function(locx, locy, angle, sizex, sizey) {
+      var hx = sizex / 2;
+      var hy = sizey / 2;
+      this.fillStyle = color || self.p.defaultEdgeHoverColor;
+      this.translate((locx ), (locy));
+      this.rotate(angle);
+      this.translate(-hx,-hy);
+
+      this.beginPath();
+      this.moveTo(0,0);
+      this.lineTo(0,1*sizey);    
+      this.lineTo(1*sizex,1*hy);
+      this.closePath();
+      this.fill();
+      this.translate(hx,hy);
+      this.rotate(-angle);
+      this.translate(-locx,-locy);
+    }
+
+    function findAngle(sx, sy, ex, ey) {
+      return Math.atan2(ey - sy, ex - sx);
+    }
+
+    var width = edge['displaySize'] * self.p.edgeHoverSizeRatio; //adjust edge thickness
+
+    //FIXME: Handle bidi edges
+    switch (graph.edgeType || self.p.defaultEdgeType) {
+      case 'curve':
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width;
+        ctx.beginPath();
+
+        var xi = (x1 + x2) / 2 + (y2 - y1) / 4;
+        var yi = (y1 + y2) / 2 + (x1 - x2) / 4;
+
+        if(graph.oriented){
+          var r = Math.round(edge['target']['displaySize'] * 10) / 10 + 2 + 3/2 * width;
+          var L = Math.sqrt(Math.pow(x2 - xi, 2) + Math.pow(y2 - yi, 2));
+          var dx = Math.round((x2 - xi) * r / L);
+          var dy = Math.round((y2 - yi) * r / L);
+          
+          x2 = x2 - dx;
+          y2 = y2 - dy;
+        }
+        
+        ctx.moveTo(x1, y1);
+        ctx.quadraticCurveTo(xi,
+                             yi,
+                             x2,
+                             y2);
+        ctx.stroke();
+        if(graph.oriented){
+          ctx.arrow(x2,
+                    y2,
+                    findAngle(xi, yi, x2, y2),
+                    3 * width,
+                    3 * width);
+        }
+        break;
+      case 'line':
+      default:
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width;
+        ctx.beginPath();
+
+        if(graph.oriented){
+          var r = Math.round(edge['target']['displaySize'] * 10) / 10 + 2 + 3/2 * width;
+          var L = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+          var dx = Math.round((x2 - x1) * r / L);
+          var dy = Math.round((y2 - y1) * r / L);
+          x2 = x2 - dx;
+          y2 = y2 - dy;
+        }
+
+        ctx.moveTo(x1, y1); 
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        if(graph.oriented){
+          ctx.arrow(x2,
+                    y2,
+                    findAngle(x1, y1, x2, y2),
+                    3 * width,
+                    3 * width);
+        }
+        break;
+    }
+
+    return self;
+  };
+
+  /**
    * Draws one active node to the corresponding canvas.
    * @param  {Object} node The active node to draw.
    * @return {Plotter} Returns itself.
@@ -673,6 +858,7 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, hoverCtx, graph, w, h) {
   this.task_drawNode = task_drawNode;
   this.drawActiveNode = drawActiveNode;
   this.drawHoverNode = drawHoverNode;
+  this.drawHoverEdge = drawHoverEdge;
   this.isOnScreen = isOnScreen;
   this.resize = resize;
 }
