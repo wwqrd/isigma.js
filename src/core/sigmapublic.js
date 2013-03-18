@@ -202,7 +202,8 @@ function SigmaPublic(sigmaInstance) {
   };
 
   // Events
-  s.bind('downnodes upnodes downgraph upgraph ctrlclicknodes rightclicknodes dblclicknodes', function(e) {
+  s.bind('downnodes upnodes downedges upedges downgraph upgraph ctrlclicknodes rightclicknodes dblclicknodes ctrlclickedges rightclickedges dblclickedges', function(e) {
+    // console.log(e.type, e.content);
     self.dispatch(e.type, e.content);
   });
 

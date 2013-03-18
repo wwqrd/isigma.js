@@ -146,24 +146,44 @@ function Sigma(root, id) {
       true
     );
   }).bind('mousedown mouseup ctrlclick', function(e) {
+    eventType = (e['type'] == 'mousedown') ? 'downgraph' : 'upgraph';
+    self.dispatch(eventType);
+
+    targeted = self.graph.edges.filter(function(e) {
+      return !!e['hover'];
+    }).map(function(e) {
+      return e.id;
+    });
+
+    if (targeted.length) {
+      eventType = 'upedges';
+      if(e['type'] == 'ctrlclick') {
+        eventType = 'ctrlclickedges';
+      } else if(e['type'] == 'mousedown') {
+        eventType = 'downedges';
+      }
+
+      self.dispatch(
+        eventType,
+        targeted
+      );
+
+      // don't dispatch node events if edges are found.
+      return;
+    }
+
     targeted = self.graph.nodes.filter(function(n) {
       return !!n['hover'];
     }).map(function(n) {
       return n.id;
     });
 
-    eventType = 'upgraph';
-    if (e['type'] == 'mousedown') {
-      eventType = 'downgraph';
-    }
-    self.dispatch(eventType);
-
     if (targeted.length) {
-      if(e['type'] == 'ctrlclick')
+      if(e['type'] == 'ctrlclick') {
         eventType = 'ctrlclicknodes';
-      else if(e['type'] == 'mousedown')
+      } else if(e['type'] == 'mousedown') {
         eventType = 'downnodes';
-      else {
+      } else {
         eventType = 'upnodes';
         self.draw(
           self.p.auto ? -1 : self.p.drawNodes,
@@ -178,6 +198,23 @@ function Sigma(root, id) {
       );
     }
   }).bind('rightclick dblclick', function(e) {
+    targeted = self.graph.edges.filter(function(e) {
+      return !!e['hover'];
+    }).map(function(e) {
+      return e.id;
+    });
+
+    if (targeted.length) {
+      eventType = (e['type'] == 'dblclick') ? 'dblclickedges' : 'rightclickedges';
+      self.dispatch(
+        eventType,
+        targeted
+      );
+
+      // don't dispatch node events if edges are found.
+      return;
+    }
+
     targeted = self.graph.nodes.filter(function(n) {
       return !!n['hover'];
     }).map(function(n) {
@@ -185,10 +222,7 @@ function Sigma(root, id) {
     });
 
     if (targeted.length) {
-      eventType = 'rightclicknodes';
-      if(e['type'] == 'dblclick')
-        eventType = 'dblclicknodes';
-
+      eventType = (e['type'] == 'dblclick') ? 'dblclicknodes' : 'rightclicknodes';
       self.dispatch(
         eventType,
         targeted
