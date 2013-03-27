@@ -93,11 +93,20 @@ function Graph() {
         case 'label':
           n[k] = params[k];
           break;
+        case 'attributes':
+          for (var j in params[k]) {
+            if (undefined != params[k][j].attr && undefined != params[k][j].val) {
+              n['attr'][params[k][j].attr] = params[k][j].val;
+            }
+          }
+          break;
         default:
-          n['attr'][k] = params[k];
+          if (undefined != params[k]) {
+            n['attr'][k] = params[k];
+          }
       }
     }
-
+    
     self.nodes.push(n);
     self.nodesIndex[id.toString()] = n;
 
@@ -169,7 +178,7 @@ function Graph() {
           node[k] = (copy[k] || '').toString();
           break;
         default:
-          node['attr'][k] = copy[k];
+          node[k] = copy[k];
       }
     }
 
@@ -289,12 +298,16 @@ function Graph() {
           e[k] = params[k];
           break;
         case 'attributes':
-          for(j in params[k]) {
-            e['attr'][params[k][j].attr] = params[k][j].val;
+          for (var j in params[k]) {
+            if (undefined != params[k][j].attr && undefined != params[k][j].val) {
+              e['attr'][params[k][j].attr] = params[k][j].val;
+            }
           }
           break;
         default:
-          e['attr'][k] = params[k];
+          if (undefined != params[k]) {
+            e['attr'][k] = params[k];
+          }
       }
     }
 
