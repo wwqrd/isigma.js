@@ -6,9 +6,13 @@
  * @param {CanvasRenderingContext2D} nodesCtx  Context dedicated to draw nodes.
  * @param {CanvasRenderingContext2D} edgesCtx  Context dedicated to draw edges.
  * @param {CanvasRenderingContext2D} labelsCtx Context dedicated to draw
- *                                             labels.
+ *                                             node labels.
+ * @param {CanvasRenderingContext2D} edgelabelsCtx Context dedicated to draw
+ *                                             edge labels.
  * @param {CanvasRenderingContext2D} hoverCtx  Context dedicated to draw hover
- *                                             nodes labels.
+ *                                             nodes and labels.
+ * @param {CanvasRenderingContext2D} edgehoverCtx  Context dedicated to draw hover
+ *                                             edge and labels.
  * @param {Graph} graph                        A reference to the graph to
  *                                             draw.
  * @param {number} w                           The width of the DOM root
@@ -18,7 +22,7 @@
  * @extends sigma.classes.Cascade
  * @this {Plotter}
  */
-function Plotter(nodesCtx, edgesCtx, labelsCtx, hoverCtx, graph, w, h) {
+function Plotter(nodesCtx, edgesCtx, labelsCtx, edgelabelsCtx, hoverCtx, edgehoverCtx, graph, w, h) {
   sigma.classes.Cascade.call(this);
 
   /**
@@ -35,38 +39,29 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, hoverCtx, graph, w, h) {
    */
   this.p = {
     // -------
-    // LABELS:
+    // NODE LABELS:
     // -------
     //   Label color:
     //   - 'node'
-    //   - default (then defaultLabelColor
-    //              will be used instead)
+    //   - default (defaultLabelColor will be used instead)
     labelColor: 'default',
     defaultLabelColor: '#000',
     //   Label hover background color:
     //   - 'node'
-    //   - default (then defaultHoverLabelBGColor
-    //              will be used instead)
+    //   - default (defaultHoverLabelBGColor will be used instead)
     labelHoverBGColor: 'default',
-    //   Label hover background color:
-    //   - 'edge'
-    //   - default (then defaultHoverLabelBGColor
-    //              will be used instead)
-    edgeLabelHoverBGColor: 'default',
     defaultHoverLabelBGColor: '#fff',
     //   Label hover shadow:
     labelHoverShadow: true,
     labelHoverShadowColor: '#000',
     //   Label hover color:
     //   - 'node'
-    //   - default (then defaultLabelHoverColor
-    //              will be used instead)
+    //   - default (defaultLabelHoverColor will be used instead)
     labelHoverColor: 'default',
     defaultLabelHoverColor: '#000',
     //   Label active background color:
     //   - 'node'
-    //   - default (then defaultActiveLabelBGColor
-    //              will be used instead)
+    //   - default (defaultActiveLabelBGColor will be used instead)
     labelActiveBGColor: 'default',
     defaultActiveLabelBGColor: '#fff',
     //   Label active shadow:
@@ -74,8 +69,7 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, hoverCtx, graph, w, h) {
     labelActiveShadowColor: '#000',
     //   Label active color:
     //   - 'node'
-    //   - default (then defaultLabelActiveColor
-    //              will be used instead)
+    //   - default (defaultLabelActiveColor will be used instead)
     labelActiveColor: 'default',
     defaultLabelActiveColor: '#000',
     //   Label size:
@@ -91,25 +85,61 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, hoverCtx, graph, w, h) {
     fontStyle: '',
     hoverFontStyle: '',
     activeFontStyle: '',
+
+    // -------
+    // EDGE LABELS:
+    // -------
+    //   Edge label size:
+    //   - 'fixed'
+    //   - 'proportional'
+    edgeLabelSize: 'fixed',
+    defaultEdgeLabelSize: 12, // for fixed display only
+    edgeLabelSizeRatio: 1,    // for proportional display only
+    edgeLabelThreshold: 6,
+    defaultEdgeLabelColor: '#000',
+    defaultEdgeLabelBGColor: 'rgba(255,255,255,0.7)',
+    defaultEdgeHoverLabelColor: '#000',
+    defaultEdgeHoverLabelBGColor: 'rgba(255,255,255,0.7)',
+    //   Edge label color:
+    //   - 'edge'
+    //   - default (defaultEdgeLabelColor will be used instead)
+    edgeLabelColor: 'default',
+    //   Edge label background color:
+    //   - 'edge'
+    //   - default (defaultEdgeLabelBGColor will be used instead)
+    edgeLabelBGColor: 'default',
+    //   Edge label hover color:
+    //   - 'edge'
+    //   - default (defaultEdgeHoverLabelColor will be used instead)
+    edgeHoverLabelColor: 'default',
+    //   Edge label hover background color:
+    //   - 'edge'
+    //   - default (defaultEdgeHoverLabelBGColor will be used instead)
+    edgeHoverLabelBGColor: 'default',
+
     // ------
     // EDGES:
     // ------
     //   Edge color:
     //   - 'source'
     //   - 'target'
-    //   - default (then defaultEdgeColor or edge['color']
-    //              will be used instead)
+    //   - 'default' (defaultEdgeColor or edge['color'] will be used instead)
     edgeColor: 'source',
     defaultEdgeColor: '#aaa',
-    defaultEdgeHoverColor: '#aaa',
+    //   Edge type:
+    //   - 'line'
+    //   - 'curve'
     defaultEdgeType: 'line',
-    //   Oriented Edges:
-    //   - true
-    //   - false
-    //   - default (then defaultEdgeColor or edge['color']
-    //              will be used instead)
-    //TODO
-    edgeHoverSizeRatio: 2,  // for the edge thickness on mouse hover
+    edgeHoverSizeRatio: 1,
+    //   Label hover color:
+    //   - 'source'
+    //   - 'target'
+    //   - 'edge'
+    //   - 'default' (defaultEdgeHoverColor will be used instead)
+    edgeHoverColor: 'default',
+    defaultEdgeHoverColor: '#aaa',
+    hoverSourceOnEdgeHover: false,
+    hoverTargetOnEdgeHover: false,
 
     // ------
     // NODES:
@@ -118,8 +148,7 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, hoverCtx, graph, w, h) {
     // HOVER:
     //   Node hover color:
     //   - 'node'
-    //   - default (then defaultNodeHoverColor
-    //              will be used instead)
+    //   - default (defaultNodeHoverColor will be used instead)
     nodeHoverColor: 'node',
     defaultNodeHoverColor: '#fff',
     // ACTIVE:
@@ -131,17 +160,18 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, hoverCtx, graph, w, h) {
     defaultNodeActiveColor: '#fff',
     //   Node border color:
     //   - 'node'
-    //   - default (then defaultNodeBorderColor
-    //              will be used instead)
+    //   - default (defaultNodeBorderColor will be used instead)
     borderSize: 0,
     nodeBorderColor: 'node',
     defaultNodeBorderColor: '#fff',
+
     // --------
     // PROCESS:
     // --------
     edgesSpeed: 200,
     nodesSpeed: 200,
-    labelsSpeed: 200
+    labelsSpeed: 200,
+    edgeLabelsSpeed: 200
   };
 
   /**
@@ -163,10 +193,22 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, hoverCtx, graph, w, h) {
   var labelsCtx = labelsCtx;
 
   /**
+   * The canvas context dedicated to draw the edge labels.
+   * @type {CanvasRenderingContext2D}
+   */
+  var edgelabelsCtx = edgelabelsCtx;
+
+  /**
    * The canvas context dedicated to draw the hover nodes.
    * @type {CanvasRenderingContext2D}
    */
   var hoverCtx = hoverCtx;
+
+  /**
+   * The canvas context dedicated to draw the hover edges.
+   * @type {CanvasRenderingContext2D}
+   */
+  var edgehoverCtx = edgehoverCtx;
 
   /**
    * A reference to the graph to draw.
@@ -203,6 +245,12 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, hoverCtx, graph, w, h) {
    * @type {number}
    */
   this.currentLabelIndex = 0;
+
+  /**
+   * The index of the next edge label to draw.
+   * @type {number}
+   */
+  this.currentEdgeLabelIndex = 0;
 
   /**
    * An atomic function to drawn the N next edges, with N as edgesSpeed.
@@ -260,7 +308,7 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, hoverCtx, graph, w, h) {
 
   /**
    * An atomic function to drawn the N next labels, with N as labelsSpeed.
-   * The counter is {@link this.currentEdgeIndex}.
+   * The counter is {@link this.currentLabelIndex}.
    * This function has been designed to work with {@link sigma.chronos}, that
    * will insert frames at the middle of the calls, to make the labels drawing
    * process fluid for the user.
@@ -280,6 +328,33 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, hoverCtx, graph, w, h) {
     }
 
     return self.currentLabelIndex < c;
+  };
+
+  /**
+   * An atomic function to drawn the N next edge labels, with N as edgeLabelsSpeed.
+   * The counter is {@link this.currentEdgeLabelIndex}.
+   * This function has been designed to work with {@link sigma.chronos}, that
+   * will insert frames at the middle of the calls, to make the labels drawing
+   * process fluid for the user.
+   * @see sigma.chronos
+   * @return {boolean} Returns true if all the labels are drawn and false else.
+   */
+  function task_drawEdgeLabel() {
+    var c = graph.edges.length;
+    var s, t, i = 0;
+
+    while (i++< self.p.edgeLabelsSpeed && self.currentEdgeLabelIndex < c) {
+      e = graph.edges[self.currentEdgeLabelIndex];
+      s = e['source'];
+      t = e['target'];
+      if (e['hidden'] || (!self.isOnScreen(s) && !self.isOnScreen(t))) {
+        self.currentEdgeLabelIndex++;
+      } else {
+        drawEdgeLabel(graph.edges[self.currentEdgeLabelIndex++]);
+      }
+    }
+
+    return self.currentEdgeLabelIndex < c;
   };
 
   /**
@@ -361,20 +436,20 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, hoverCtx, graph, w, h) {
       return Math.atan2(ey - sy, ex - sx);
     }
 
-    var width = edge['displaySize'] / 3;
+    var lineWidth = edge['displaySize'] / 3;
 
     //FIXME: Handle bidi edges
     switch (graph.edgeType || self.p.defaultEdgeType) {
       case 'curve':
         ctx.strokeStyle = color;
-        ctx.lineWidth = edge['displaySize'] / 3;
+        ctx.lineWidth = lineWidth;
         ctx.beginPath();
 
         var xi = (x1 + x2) / 2 + (y2 - y1) / 4;
         var yi = (y1 + y2) / 2 + (x1 - x2) / 4;
 
         if(graph.oriented){
-          var r = Math.round(edge['target']['displaySize'] * 10) / 10 + 2 + 3/2 * width;
+          var r = Math.round(edge['target']['displaySize'] * 10) / 10 + 2 + 3/2 * lineWidth;
           var L = Math.sqrt(Math.pow(x2 - xi, 2) + Math.pow(y2 - yi, 2));
           var dx = Math.round((x2 - xi) * r / L);
           var dy = Math.round((y2 - yi) * r / L);
@@ -393,18 +468,18 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, hoverCtx, graph, w, h) {
           ctx.arrow(x2,
                     y2,
                     findAngle(xi, yi, x2, y2),
-                    3 * width,
-                    3 * width);
+                    3 * lineWidth,
+                    3 * lineWidth);
         }
         break;
       case 'line':
       default:
         ctx.strokeStyle = color;
-        ctx.lineWidth = edge['displaySize'] / 3;
+        ctx.lineWidth = lineWidth;
         ctx.beginPath();
 
         if(graph.oriented){
-          var r = Math.round(edge['target']['displaySize'] * 10) / 10 + 2 + 3/2 * width;
+          var r = Math.round(edge['target']['displaySize'] * 10) / 10 + 2 + 3/2 * lineWidth;
           var L = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
           var dx = Math.round((x2 - x1) * r / L);
           var dy = Math.round((y2 - y1) * r / L);
@@ -419,18 +494,20 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, hoverCtx, graph, w, h) {
           ctx.arrow(x2,
                     y2,
                     findAngle(x1, y1, x2, y2),
-                    3 * width,
-                    3 * width);
+                    3 * lineWidth,
+                    3 * lineWidth);
         }
         break;
     }
+
+    edge['hover'] && drawHoverEdge(edge);
 
     return self;
   };
 
   /**
-   * Draws one label to the corresponding canvas.
-   * @param  {Object} node The label to draw.
+   * Draws one node label to the corresponding canvas.
+   * @param  {Object} node The node of label to draw.
    * @return {Plotter} Returns itself.
    */
   function drawLabel(node) {
@@ -450,6 +527,122 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, hoverCtx, graph, w, h) {
         node['label'],
         Math.round(node['displayX'] + node['displaySize'] * 1.5),
         Math.round(node['displayY'] + fontSize / 2 - 3)
+      );
+    }
+
+    return self;
+  };
+
+  /**
+   * Draws one edge label to the corresponding canvas.
+   * @param  {Object} edge The edge of label to draw.
+   * @return {Plotter} Returns itself.
+   */
+  function drawEdgeLabel(edge) {
+    if (edge['source'] == edge['target'] || //hide self-loop labels
+        edge['label'] == undefined || !edge['label'].length)
+      return self;
+
+    var fontSize = self.p.edgeLabelSize == 'fixed' ?
+                    self.p.defaultEdgeLabelSize :
+                    self.p.edgeLabelSizeRatio * edge['displaySize'];
+
+    if (fontSize >= self.p.edgeLabelThreshold || edge['forceLabel']) {
+      var ctx = edgelabelsCtx;
+
+      var x1 = edge['source']['displayX'];
+      var y1 = edge['source']['displayY'];
+      var x2 = edge['target']['displayX'];
+      var y2 = edge['target']['displayY'];
+
+      ctx.font = (self.p.hoverFontStyle || self.p.fontStyle || '') + ' ' +
+                 fontSize + 'px ' +
+                 (self.p.hoverFont || self.p.font || '');
+
+
+      ctx.strokeStyle = self.p.edgeLabelBGColor == 'edge' ?
+                      (edge['color'] || self.p.defaultEdgeHoverColor) :
+                      self.p.defaultEdgeLabelBGColor;
+
+      // Label background:
+      ctx.beginPath();
+
+      // case 'line'
+      var labelX = (x1 + x2) / 2;
+      var labelY = (y1 + y2) / 2;
+      var textWidth = ctx.measureText(edge['label']).width;
+
+      // Label:
+      ctx.strokeText(edge['label'],
+        Math.round(labelX - (textWidth / 2)),
+        Math.round(labelY + (fontSize / 2))
+      );
+
+      ctx.fillStyle = self.p.edgeLabelColor == 'edge' ?
+                      (edge['color'] || self.p.defaultEdgeColor) :
+                      self.p.defaultEdgeLabelColor;
+      ctx.fillText(
+        edge['label'],
+        Math.round(labelX - (textWidth / 2)),
+        Math.round(labelY + (fontSize / 2))
+      );
+    }
+
+    return self;
+  };
+
+  /**
+   * Draws one hover edge label to the corresponding canvas.
+   * @param  {Object} edge The hover edge of label to draw.
+   * @return {Plotter} Returns itself.
+   */
+  function drawHoverEdgeLabel(edge) {
+    if (edge['source'] == edge['target'] || //hide self-loop labels
+        edge['label'] == undefined || !edge['label'].length)
+      return self;
+
+    var fontSize = self.p.edgeLabelSize == 'fixed' ?
+                    self.p.defaultEdgeLabelSize :
+                    self.p.edgeLabelSizeRatio * edge['displaySize'];
+
+    if (fontSize >= self.p.edgeLabelThreshold || edge['forceLabel']) {
+      var ctx = edgehoverCtx;
+
+      var x1 = edge['source']['displayX'];
+      var y1 = edge['source']['displayY'];
+      var x2 = edge['target']['displayX'];
+      var y2 = edge['target']['displayY'];
+
+      ctx.font = (self.p.hoverFontStyle || self.p.fontStyle || '') + ' ' +
+                 fontSize + 'px ' +
+                 (self.p.hoverFont || self.p.font || '');
+
+
+      ctx.strokeStyle = self.p.edgeHoverLabelBGColor == 'edge' ?
+                      (edge['color'] || self.p.defaultEdgeHoverColor) :
+                      self.p.defaultEdgeHoverLabelBGColor;
+
+      // Label background:
+      ctx.beginPath();
+
+      // case 'line'
+      var labelX = (x1 + x2) / 2;
+      var labelY = (y1 + y2) / 2;
+      var textWidth = ctx.measureText(edge['label']).width;
+
+      // Label:
+      ctx.strokeText(edge['label'],
+        Math.round(labelX - (textWidth / 2)),
+        Math.round(labelY + (fontSize / 2))
+      );
+
+      ctx.fillStyle = self.p.edgeHoverLabelColor == 'edge' ?
+                      (edge['color'] || self.p.defaultEdgeHoverColor) :
+                      self.p.defaultEdgeHoverLabelColor;
+      ctx.fillText(
+        edge['label'],
+        Math.round(labelX - (textWidth / 2)),
+        Math.round(labelY + (fontSize / 2))
       );
     }
 
@@ -552,92 +745,37 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, hoverCtx, graph, w, h) {
    * @return {Plotter} Returns itself.
    */
   function drawHoverEdge(edge) {
-    var ctx = hoverCtx;
+    var ctx = edgehoverCtx;
 
     var x1 = edge['source']['displayX'];
     var y1 = edge['source']['displayY'];
     var x2 = edge['target']['displayX'];
     var y2 = edge['target']['displayY'];
-    var color = edge['color'];
+    var color;
 
-    if (!color) {
-      switch (self.p.edgeColor) {
-        case 'source':
-          color = edge['source']['color'] ||
-                  self.p.defaultNodeColor;
-          break;
-        case 'target':
-          color = edge['target']['color'] ||
-                  self.p.defaultNodeColor;
-          break;
-        default:
-          color = self.p.defaultEdgeHoverColor;
-          break;
-      }
-    }
-
-    var fontSize = self.p.labelSize == 'fixed' ?
-                   self.p.defaultLabelSize :
-                   self.p.labelSizeRatio * edge['displaySize'];
-
-    ctx.font = (self.p.hoverFontStyle || self.p.fontStyle || '') + ' ' +
-               fontSize + 'px ' +
-               (self.p.hoverFont || self.p.font || '');
-
-    ctx.fillStyle = self.p.edgeLabelHoverBGColor == 'edge' ?
-                    (edge['color'] || self.p.defaultEdgeHoverColor) :
-                    self.p.defaultHoverLabelBGColor;
-
-    if (edge['label'] != undefined && edge['label'].length) {
-      // console.log(edge['label']);
-
-      // Label background:
-      ctx.beginPath();
-
-      if (self.p.labelHoverShadow) {
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 0;
-        ctx.shadowBlur = 4;
-        ctx.shadowColor = self.p.labelHoverShadowColor;
-      }
-
-      // case 'line'
-      var labelX = (x1 + x2) / 2;
-      var labelY = (y1 + y2) / 2;
-
-      sigma.tools.drawTriRect(
-        ctx,
-        Math.round(labelX),
-        Math.round(labelY),
-        Math.round(ctx.measureText(edge['label']).width +
-          edge['displaySize'] * 1.5 +
-          fontSize / 2 + 4),
-        Math.round(fontSize + 4),
-        Math.round(fontSize / 2 + 2)
-      );
-      ctx.closePath();
-      ctx.fill();
-
-      ctx.shadowOffsetX = 0;
-      ctx.shadowOffsetY = 0;
-      ctx.shadowBlur = 0;
-
-      // Label:
-      ctx.fillStyle = self.p.edgeLabelHoverColor == 'edge' ?
-                      (edge['color'] || self.p.defaultEdgeHoverColor) :
-                      self.p.defaultLabelHoverColor;
-      ctx.fillText(
-        edge['label'],
-        Math.round(labelX + 10),
-        Math.round(labelY + fontSize)
-      );
+    switch (self.p.edgeHoverColor) {
+      case 'source':
+        color = edge['source']['color'] ||
+                self.p.defaultNodeColor;
+        break;
+      case 'target':
+        color = edge['target']['color'] ||
+                self.p.defaultNodeColor;
+        break;
+      case 'edge':
+         color = edge['color'] ||
+                 self.p.defaultEdgeHoverColor;
+        break;
+      default:
+         color = self.p.defaultEdgeHoverColor;
+        break;
     }
 
     // Arrow:
     ctx.arrow = function(locx, locy, angle, sizex, sizey) {
       var hx = sizex / 2;
       var hy = sizey / 2;
-      this.fillStyle = color || self.p.defaultEdgeHoverColor;
+      this.fillStyle = color;
       this.translate((locx ), (locy));
       this.rotate(angle);
       this.translate(-hx,-hy);
@@ -657,20 +795,20 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, hoverCtx, graph, w, h) {
       return Math.atan2(ey - sy, ex - sx);
     }
 
-    var width = edge['displaySize'] * self.p.edgeHoverSizeRatio; //adjust edge thickness
+    var lineWidth = edge['displaySize'] * self.p.edgeHoverSizeRatio / 3; //adjust edge thickness
 
     //FIXME: Handle bidi edges
     switch (graph.edgeType || self.p.defaultEdgeType) {
       case 'curve':
         ctx.strokeStyle = color;
-        ctx.lineWidth = width;
+        ctx.lineWidth = lineWidth;
         ctx.beginPath();
 
         var xi = (x1 + x2) / 2 + (y2 - y1) / 4;
         var yi = (y1 + y2) / 2 + (x1 - x2) / 4;
 
         if(graph.oriented){
-          var r = Math.round(edge['target']['displaySize'] * 10) / 10 + 2 + 3/2 * width;
+          var r = Math.round(edge['target']['displaySize'] * 10) / 10 + 2 + 3/2 * lineWidth;
           var L = Math.sqrt(Math.pow(x2 - xi, 2) + Math.pow(y2 - yi, 2));
           var dx = Math.round((x2 - xi) * r / L);
           var dy = Math.round((y2 - yi) * r / L);
@@ -689,18 +827,18 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, hoverCtx, graph, w, h) {
           ctx.arrow(x2,
                     y2,
                     findAngle(xi, yi, x2, y2),
-                    3 * width,
-                    3 * width);
+                    3 * lineWidth,
+                    3 * lineWidth);
         }
         break;
       case 'line':
       default:
         ctx.strokeStyle = color;
-        ctx.lineWidth = width;
+        ctx.lineWidth = lineWidth;
         ctx.beginPath();
 
         if(graph.oriented){
-          var r = Math.round(edge['target']['displaySize'] * 10) / 10 + 2 + 3/2 * width;
+          var r = Math.round(edge['target']['displaySize'] * 10) / 10 + 2 + 3/2 * lineWidth;
           var L = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
           var dx = Math.round((x2 - x1) * r / L);
           var dy = Math.round((y2 - y1) * r / L);
@@ -715,11 +853,18 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, hoverCtx, graph, w, h) {
           ctx.arrow(x2,
                     y2,
                     findAngle(x1, y1, x2, y2),
-                    3 * width,
-                    3 * width);
+                    3 * lineWidth,
+                    3 * lineWidth);
         }
         break;
     }
+
+    drawHoverEdgeLabel(edge);
+
+    if (self.p.hoverSourceOnEdgeHover)
+      edge['source']['hover'] = true;
+    if (self.p.hoverTargetOnEdgeHover)
+      edge['target']['hover'] = true;
 
     return self;
   };
@@ -854,6 +999,7 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, hoverCtx, graph, w, h) {
   }
 
   this.task_drawLabel = task_drawLabel;
+  this.task_drawEdgeLabel = task_drawEdgeLabel;
   this.task_drawEdge = task_drawEdge;
   this.task_drawNode = task_drawNode;
   this.drawActiveNode = drawActiveNode;

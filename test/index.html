@@ -47,15 +47,28 @@
 <script src="../plugins/sigma.forceatlas2.js"></script><script type="text/javascript">function init() {
   // Instanciate sigma.js and customize it :
   var sigInst = sigma.init(document.getElementById('sigma-example')).configProperties({
-    drawHoverEdges: true,
+    drawHoverEdges: true
   }).drawingProperties({
-    defaultLabelColor: '#fff',
-    edgeHoverSizeRatio: 4,
+    // labelSize: 'proportional',
     edgeColor: 'default',
+    edgeHoverColor: 'default',
+    defaultEdgeHoverColor: '#fff',
+    edgeLabelSize: 'proportional',
+    edgeLabelSizeRatio: 0.5,
+    defaultLabelColor: '#fff',
+    defaultEdgeLabelHoverBGColor: '#333',
+    edgeHoverSizeRatio: 1,
+    hoverSourceOnEdgeHover: false,
+    hoverTargetOnEdgeHover: false,
   }).graphProperties ({
     maxNodeSize: 30,
+    edgesPowRatio: 1,
     safe: false
-  });
+  }).mouseProperties({
+    zoomDelta: 0.1,
+    dragDelta: 0.2, //0.3
+    zoomMultiply: 1.382
+  }).position(200, 200, 1);;
 
   // Generate a random graph with :
   //   . N nodes
@@ -88,7 +101,8 @@
 
   for(i = 0; i < E; i++){
     if(Math.random() < 1-d){
-      sigInst.addEdge(i,'n'+(Math.random()*N|0),'n'+(Math.random()*N|0));
+      // sigInst.addEdge(i,'n'+(Math.random()*N|0),'n'+(Math.random()*N|0), {'size': 1});
+      sigInst.addEdge(i,'n'+(Math.random()*N|0),'n'+(Math.random()*N|0), {'size': (Math.random()*10)});
     }else{
       var cluster = clusters[(Math.random()*C)|0], n = cluster.nodes.length;
       sigInst.addEdge(i,cluster.nodes[Math.random()*n|0],cluster.nodes[Math.random()*n|0]);

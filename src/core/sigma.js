@@ -35,6 +35,12 @@ function Sigma(root, id) {
   var targeted;
 
   /**
+   * Last drawHoverEdges value.
+   * @private
+   */
+  var drawHoverEdges;
+
+  /**
    * The ID of the instance.
    * @type {string}
    */
@@ -50,9 +56,11 @@ function Sigma(root, id) {
     drawNodes: 2,
     drawEdges: 1,
     drawLabels: 2,
+    drawEdgeLabels: 2,
     lastNodes: 2,
     lastEdges: 0,
     lastLabels: 2,
+    lastEdgeLabels: 2,
     drawHoverNodes: true,
     drawActiveNodes: true,
     drawHoverEdges: false
@@ -89,6 +97,8 @@ function Sigma(root, id) {
   this.domElements = {};
 
   initDOM('edges', 'canvas');
+  initDOM('edgehover', 'canvas');
+  initDOM('edgelabels', 'canvas');
   initDOM('nodes', 'canvas');
   initDOM('labels', 'canvas');
   initDOM('hover', 'canvas');
@@ -104,7 +114,9 @@ function Sigma(root, id) {
     this.domElements.nodes.getContext('2d'),
     this.domElements.edges.getContext('2d'),
     this.domElements.labels.getContext('2d'),
+    this.domElements.edgelabels.getContext('2d'),
     this.domElements.hover.getContext('2d'),
+    this.domElements.edgehover.getContext('2d'),
     this.graph,
     this.width,
     this.height
@@ -136,6 +148,7 @@ function Sigma(root, id) {
       self.p.auto ? 2 : self.p.drawNodes,
       self.p.auto ? 0 : self.p.drawEdges,
       self.p.auto ? 2 : self.p.drawLabels,
+      self.p.auto ? 0 : self.p.drawEdgeLabels,
       true
     );
   }).bind('stopdrag stopinterpolate', function(e) {
@@ -143,11 +156,42 @@ function Sigma(root, id) {
       self.p.auto ? 2 : self.p.drawNodes,
       self.p.auto ? 1 : self.p.drawEdges,
       self.p.auto ? 2 : self.p.drawLabels,
+      self.p.auto ? 1 : self.p.drawEdgeLabels,
       true
     );
   }).bind('mousedown mouseup ctrlclick', function(e) {
     eventType = (e['type'] == 'mousedown') ? 'downgraph' : 'upgraph';
     self.dispatch(eventType);
+
+    targeted = self.graph.nodes.filter(function(n) {
+      return !!n['hover'];
+    }).map(function(n) {
+      return n.id;
+    });
+
+    if (targeted.length) {
+      if(e['type'] == 'ctrlclick') {
+        eventType = 'ctrlclicknodes';
+      } else if(e['type'] == 'mousedown') {
+        eventType = 'downnodes';
+      } else {
+        eventType = 'upnodes';
+        self.draw(
+          self.p.auto ? -1 : self.p.drawNodes,
+          self.p.auto ? 1 : self.p.drawEdges,
+          self.p.auto ? -1 : self.p.drawLabels,
+          self.p.auto ? 1 : self.p.drawEdgeLabels
+        );
+      }
+
+      self.dispatch(
+        eventType,
+        targeted
+      );
+
+      // don't dispatch edge events if nodes are found.
+      return;
+    }
 
     targeted = self.graph.edges.filter(function(e) {
       return !!e['hover'];
@@ -167,54 +211,8 @@ function Sigma(root, id) {
         eventType,
         targeted
       );
-
-      // don't dispatch node events if edges are found.
-      return;
-    }
-
-    targeted = self.graph.nodes.filter(function(n) {
-      return !!n['hover'];
-    }).map(function(n) {
-      return n.id;
-    });
-
-    if (targeted.length) {
-      if(e['type'] == 'ctrlclick') {
-        eventType = 'ctrlclicknodes';
-      } else if(e['type'] == 'mousedown') {
-        eventType = 'downnodes';
-      } else {
-        eventType = 'upnodes';
-        self.draw(
-          self.p.auto ? -1 : self.p.drawNodes,
-          self.p.auto ? 1 : self.p.drawEdges,
-          self.p.auto ? -1 : self.p.drawLabels
-        );
-      }
-
-      self.dispatch(
-        eventType,
-        targeted
-      );
     }
   }).bind('rightclick dblclick', function(e) {
-    targeted = self.graph.edges.filter(function(e) {
-      return !!e['hover'];
-    }).map(function(e) {
-      return e.id;
-    });
-
-    if (targeted.length) {
-      eventType = (e['type'] == 'dblclick') ? 'dblclickedges' : 'rightclickedges';
-      self.dispatch(
-        eventType,
-        targeted
-      );
-
-      // don't dispatch node events if edges are found.
-      return;
-    }
-
     targeted = self.graph.nodes.filter(function(n) {
       return !!n['hover'];
     }).map(function(n) {
@@ -227,9 +225,27 @@ function Sigma(root, id) {
         eventType,
         targeted
       );
+
+      // don't dispatch edge events if nodes are found.
+      return;
+    }
+
+    targeted = self.graph.edges.filter(function(e) {
+      return !!e['hover'];
+    }).map(function(e) {
+      return e.id;
+    });
+
+    if (targeted.length) {
+      eventType = (e['type'] == 'dblclick') ? 'dblclickedges' : 'rightclickedges';
+      self.dispatch(
+        eventType,
+        targeted
+      );
     }
   }).bind('move', function(e) {
-    if (eventType == 'downgraph') {
+    // console.log(eventType);
+    if (eventType == 'downgraph' || eventType == 'downedges') {
       self.mousecaptor.drag();
       self.refresh();
     }
@@ -251,7 +267,8 @@ function Sigma(root, id) {
       self.draw(
         self.p.auto ? 2 : self.p.drawNodes,
         self.p.auto ? 0 : self.p.drawEdges,
-        self.p.auto ? 2 : self.p.drawLabels
+        self.p.auto ? 2 : self.p.drawLabels,
+        self.p.auto ? 0 : self.p.drawEdgeLabels
       );
     } else {
       self.refresh();
@@ -262,13 +279,20 @@ function Sigma(root, id) {
     if (sigma.chronos.getGeneratorsIDs().some(function(id) {
       return !!id.match(new RegExp('_ext_' + self.id + '$', ''));
     })) {
+      if (drawHoverEdges === undefined) {
+        drawHoverEdges = self.p.drawHoverEdges;
+        self.p.drawHoverEdges = false;
+      }
       self.draw(
         self.p.auto ? 2 : self.p.drawNodes,
         self.p.auto ? 0 : self.p.drawEdges,
-        self.p.auto ? 2 : self.p.drawLabels
+        self.p.auto ? 2 : self.p.drawLabels,
+        self.p.auto ? 0 : self.p.drawEdgeLabels
       );
     }
   }).bind('stopgenerators', function() {
+    self.p.drawHoverEdges = drawHoverEdges;
+    drawHoverEdges = undefined;
     self.draw();
   });
 
@@ -303,6 +327,7 @@ function Sigma(root, id) {
         self.p.lastNodes,
         self.p.lastEdges,
         self.p.lastLabels,
+        self.p.lastEdgeLabels,
         true
       );
     }
@@ -355,12 +380,13 @@ function Sigma(root, id) {
    * @param  {?number} nodes  Determines if and how the nodes must be drawn.
    * @param  {?number} edges  Determines if and how the edges must be drawn.
    * @param  {?number} labels Determines if and how the labels must be drawn.
+   * @param  {?number} edgeLabels Determines if and how the edge labels must be drawn.
    * @param  {?boolean} safe  If true, nothing will happen if any generator
    *                          affiliated to this instance is currently running
    *                          (an iterative layout, for example).
    * @return {Sigma} Returns itself.
    */
-  function draw(nodes, edges, labels, safe) {
+  function draw(nodes, edges, labels, edgeLabels, safe) {
     if (safe && sigma.chronos.getGeneratorsIDs().some(function(id) {
       return !!id.match(new RegExp('_ext_' + self.id + '$', ''));
     })) {
@@ -370,16 +396,19 @@ function Sigma(root, id) {
     var n = (nodes == undefined) ? self.p.drawNodes : nodes;
     var e = (edges == undefined) ? self.p.drawEdges : edges;
     var l = (labels == undefined) ? self.p.drawLabels : labels;
+    var le = (labels == undefined) ? self.p.drawEdgeLabels : edgeLabels;
 
     var params = {
       nodes: n,
       edges: e,
-      labels: l
+      labels: l,
+      edgeLabels: le
     };
 
     self.p.lastNodes = n;
     self.p.lastEdges = e;
     self.p.lastLabels = l;
+    self.p.lastEdgeLabels = le;
 
     // Remove tasks:
     clearSchedule();
@@ -428,9 +457,33 @@ function Sigma(root, id) {
     self.plotter.currentEdgeIndex = 0;
     self.plotter.currentNodeIndex = 0;
     self.plotter.currentLabelIndex = 0;
+    self.plotter.currentEdgeLabelIndex = 0;
 
     var previous = null;
     var start = false;
+
+    if (le) {
+      if (le > 1) {
+        while (self.plotter.task_drawEdgeLabel()) {}
+      } else {
+        if (previous) {
+          sigma.chronos.queueTask(
+            self.plotter.task_drawEdgeLabel,
+            'label_' + self.id,
+            previous
+          );
+        } else {
+          sigma.chronos.addTask(
+            self.plotter.task_drawEdgeLabel,
+            'label_' + self.id,
+            false
+          );
+        }
+
+        start = true;
+        previous = 'label_' + self.id;
+      }
+    }
 
     if (n) {
       if (n > 1) {
@@ -514,6 +567,12 @@ function Sigma(root, id) {
       self.domElements.hover.width,
       self.domElements.hover.height
     );
+    self.domElements.edgehover.getContext('2d').clearRect(
+      0,
+      0,
+      self.domElements.edgehover.width,
+      self.domElements.edgehover.height
+    );
 
     drawHover();
     drawActive();
@@ -545,8 +604,6 @@ function Sigma(root, id) {
       self.graph.edges.forEach(function(edge) {
         if (edge.hover && !edge.active) {
           self.plotter.drawHoverEdge(edge);
-          edge['source']['hover'] = true;
-          edge['target']['hover'] = true;
         }
       });
     }
