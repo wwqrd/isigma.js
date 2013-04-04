@@ -266,7 +266,7 @@ function Sigma(root, id) {
       );
       self.draw(
         self.p.auto ? 2 : self.p.drawNodes,
-        self.p.auto ? 0 : self.p.drawEdges,
+        self.p.auto ? 2 : self.p.drawEdges,
         self.p.auto ? 2 : self.p.drawLabels,
         self.p.auto ? 0 : self.p.drawEdgeLabels
       );
