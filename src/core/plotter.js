@@ -768,6 +768,9 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, edgelabelsCtx, hoverCtx, edgehov
     var y2 = edge['target']['displayY'];
     var color;
 
+    if (e['hidden'] || (!self.isOnScreen(edge['source']) && !self.isOnScreen(edge['target'])))
+      return;
+
     switch (self.p.edgeHoverColor) {
       case 'source':
         color = edge['source']['color'] ||
