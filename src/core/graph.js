@@ -668,35 +668,36 @@ function Graph() {
    * @return {Graph} Returns itself.
    */
   function checkHoverEdge(mX, mY, mR, defaultEdgeType) {
-    var dX, dY, s, over = [], out = [];
-    var epsilon = Math.abs(Math.log(1/ (mR * mR) )) * 100 || 100 ;
+    var dX1, dY1, dX2, dY2,
+        x1, y1, x2, y2, s1, s2, w,
+        isBetweenExtremities, crossproduct, 
+        oldH, newH,
+        over = [], out = [];
+    var epsilon = Math.abs(Math.log(1/ (mR * mR) )) * 18 || 100;
     self.edges.forEach(function(edge) {
       if (edge['hidden']) {
         edge['hover'] = false;
         return;
       }
 
-      var x1 = edge['source']['displayX'];
-      var y1 = edge['source']['displayY'];
-      var s1 = edge['source']['displaySize'];
-      var x2 = edge['target']['displayX'];
-      var y2 = edge['target']['displayY'];
-      var s2 = edge['target']['displaySize'];
-      var w = edge['displaySize'];
+      x1 = edge['source']['displayX'],
+      y1 = edge['source']['displayY'],
+      s1 = edge['source']['displaySize'],
+      x2 = edge['target']['displayX'],
+      y2 = edge['target']['displayY'],
+      s2 = edge['target']['displaySize'],
+      w = edge['displaySize'],
+      oldH = edge['hover'],
+      newH = false;
 
       dX1 = Math.abs(x1 - mX);
       dY1 = Math.abs(y1 - mY);
       dX2 = Math.abs(x2 - mX);
       dY2 = Math.abs(y2 - mY);
 
-      var oldH = edge['hover'];
-      var newH;
-
-      if (x1 == x2 && y1 == y2 ||
+      if (!(x1 == x2 && y1 == y2 ||
         dX1 < s1 && dY1 < s1 ||
-        dX2 < s2 && dY2 < s2) {
-        newH = false;
-      } else {
+        dX2 < s2 && dY2 < s2)) {
         switch (self.edgeType || defaultEdgeType) {
           case 'curve':
             // var xi = (x1 + x2) / 2 + (y2 - y1) / 4;
@@ -705,15 +706,11 @@ function Graph() {
           break;
           case 'line':
           default:
-            var isBetweenExtremities = Math.min(x1, x2) < mX && mX < Math.max(x1, x2) && Math.min(y1, y2) < mY && mY < Math.max(y1, y2);
+            isBetweenExtremities = Math.min(x1, x2) < mX && mX < Math.max(x1, x2) && Math.min(y1, y2) < mY && mY < Math.max(y1, y2);
             if (isBetweenExtremities) {
-              var crossproduct = Math.abs((mY - y1) * (x2 - x1) - (mX - x1) * (y2 - y1));
+              crossproduct = Math.abs((mY - y1) * (x2 - x1) - (mX - x1) * (y2 - y1));
               newH = crossproduct < w * epsilon;
               newH && over.push(edge.id);
-              // if (newH) {
-              //   console.log("hover edge",edge['source'].id, edge['target'].id);
-              // }
-              // console.log(crossproduct, w, mR, w * mR * mR);
             }
           break;
         }
