@@ -548,37 +548,48 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, edgelabelsCtx, hoverCtx, edgehov
                     self.p.defaultEdgeLabelSize :
                     self.p.edgeLabelSizeRatio * edge['displaySize'];
 
-    if (fontSize >= self.p.edgeLabelThreshold || edge['forceLabel']) {
-      var ctx = edgelabelsCtx;
-
-      var x1 = edge['source']['displayX'];
-      var y1 = edge['source']['displayY'];
-      var x2 = edge['target']['displayX'];
-      var y2 = edge['target']['displayY'];
+    if (fontSize >= self.p.edgeLabelThreshold * 2.3 || edge['forceLabel']) {
+      var ctx = edgelabelsCtx,
+          x1 = edge['source']['displayX'],
+          y1 = edge['source']['displayY'],
+          x2 = edge['target']['displayX'],
+          y2 = edge['target']['displayY'],
+          labelX, labelY, textWidth;
 
       ctx.font = (self.p.hoverFontStyle || self.p.fontStyle || '') + ' ' +
                  fontSize + 'px ' +
                  (self.p.hoverFont || self.p.font || '');
+      textWidth = ctx.measureText(edge['label']).width; //must be declared after setting font
 
+      switch (graph.edgeType || self.p.defaultEdgeType) {
+        case 'curve':
+          var xi = (x1 + x2) / 2 + (y2 - y1) / 4, //control point
+              yi = (y1 + y2) / 2 + (x1 - x2) / 4, //control point
+              t = 0.5;  //length of the curve
+          
+          var labelCoord = sigma.tools.pointOnQuadraticCurve(t, x1, y1, x2, y2, xi, yi);
+          labelX = labelCoord.x;
+          labelY = labelCoord.y;
+          break;
+        case 'line':
+        default:
+          labelX = (x1 + x2) / 2;
+          labelY = (y1 + y2) / 2;
+          break;
+      }
 
+      // Label background:
       ctx.strokeStyle = self.p.edgeLabelBGColor == 'edge' ?
                       (edge['color'] || self.p.defaultEdgeHoverColor) :
                       self.p.defaultEdgeLabelBGColor;
 
-      // Label background:
-      ctx.beginPath();
-
-      // case 'line'
-      var labelX = (x1 + x2) / 2;
-      var labelY = (y1 + y2) / 2;
-      var textWidth = ctx.measureText(edge['label']).width;
-
-      // Label:
-      ctx.strokeText(edge['label'],
+      ctx.strokeText(
+        edge['label'],
         Math.round(labelX - (textWidth / 2)),
         Math.round(labelY + (fontSize / 2))
       );
 
+      // Label:
       ctx.fillStyle = self.p.edgeLabelColor == 'edge' ?
                       (edge['color'] || self.p.defaultEdgeColor) :
                       self.p.defaultEdgeLabelColor;
@@ -606,51 +617,51 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, edgelabelsCtx, hoverCtx, edgehov
                     self.p.defaultEdgeLabelSize :
                     self.p.edgeLabelSizeRatio * edge['displaySize'];
 
-    if (fontSize >= self.p.edgeLabelThreshold || edge['forceLabel']) {
-      var ctx = edgehoverCtx;
-
-      var x1 = edge['source']['displayX'];
-      var y1 = edge['source']['displayY'];
-      var x2 = edge['target']['displayX'];
-      var y2 = edge['target']['displayY'];
+    if (fontSize >= self.p.edgeLabelThreshold * 2.3 || edge['forceLabel']) {
+      var ctx = edgehoverCtx,
+          x1 = edge['source']['displayX'],
+          y1 = edge['source']['displayY'],
+          x2 = edge['target']['displayX'],
+          y2 = edge['target']['displayY'],
+          labelX, labelY, textWidth;
 
       ctx.font = (self.p.hoverFontStyle || self.p.fontStyle || '') + ' ' +
                  fontSize + 'px ' +
                  (self.p.hoverFont || self.p.font || '');
+      textWidth = ctx.measureText(edge['label']).width; //must be declared after setting font
+
+      switch (graph.edgeType || self.p.defaultEdgeType) {
+        case 'curve':
+          var xi = (x1 + x2) / 2 + (y2 - y1) / 4, //control point
+              yi = (y1 + y2) / 2 + (x1 - x2) / 4, //control point
+              t = 0.5;  //length of the curve
+          
+          var labelCoord = sigma.tools.pointOnQuadraticCurve(t, x1, y1, x2, y2, xi, yi);
+          labelX = labelCoord.x;
+          labelY = labelCoord.y;
+          break;
+        case 'line':
+        default:
+          labelX = (x1 + x2) / 2;
+          labelY = (y1 + y2) / 2;
+          break;
+      }
 
       // Label background:
-      ctx.beginPath();
-
-      // case 'line'
-      var labelX = (x1 + x2) / 2;
-      var labelY = (y1 + y2) / 2;
-      var textWidth = ctx.measureText(edge['label']).width;
-
-      // Label:
       if (self.p.edgeHoverLabelBGColor != 'none') {
-        //BUGGY STROKE
-        // ctx.strokeStyle = self.p.edgeHoverLabelBGColor == 'edge' ?
-        //                 (edge['color'] || self.p.defaultEdgeHoverColor) :
-        //                 self.p.defaultEdgeHoverLabelBGColor;
-
-        // ctx.strokeText(edge['label'],
-        //   Math.round(labelX - (textWidth / 2)),
-        //   Math.round(labelY + (fontSize / 2))
-        // );
         ctx.fillStyle = self.p.edgeHoverLabelBGColor == 'edge' ?
                         (edge['color'] || self.p.defaultEdgeHoverColor) :
                         self.p.defaultEdgeHoverLabelBGColor;
 
-        sigma.tools.drawRect(
-          ctx,
+        ctx.fillRect(
           Math.round(labelX - (textWidth / 2)),
-          Math.round(labelY + (fontSize / 2)),
+          Math.round(labelY - (fontSize / 2)),
           textWidth,
-          fontSize);
-        ctx.closePath();
-        ctx.fill();
+          fontSize
+        );
       }
 
+      // Label:
       ctx.fillStyle = self.p.edgeHoverLabelColor == 'edge' ?
                       (edge['color'] || self.p.defaultEdgeHoverColor) :
                       self.p.defaultEdgeHoverLabelColor;

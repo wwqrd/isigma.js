@@ -48,23 +48,6 @@ sigma.tools.drawRoundRect = function(ctx, x, y, w, h, ellipse, corners) {
   ctx.lineTo(x, y + e);
 };
 
-sigma.tools.drawRect = function(ctx, x, y, w, h) {
-  ctx.moveTo(x, y);
-  ctx.lineTo(x, y - h);
-  ctx.lineTo(x + w, y - h);
-  ctx.lineTo(x + w, y);
-  ctx.lineTo(x, y);
-};
-
-sigma.tools.drawTriRect = function(ctx, x, y, w, h, spike) {
-  ctx.moveTo(x, y - h * 0.5);
-  ctx.lineTo(x + spike, y - h);
-  ctx.lineTo(x + w, y - h);
-  ctx.lineTo(x + w, y);
-  ctx.lineTo(x + spike, y);
-  ctx.lineTo(x, y - h * 0.5);
-};
-
 sigma.tools.getRGB = function(s, asArray) {
   s = s.toString();
   var res = {
@@ -118,3 +101,92 @@ sigma.tools.toHex = function(n) {
          '0123456789ABCDEF'.charAt(n % 16);
 };
 
+/**
+  * Check if a point is on the line segment.
+  * @param  {number} x  The X coordinate of the point to check.
+  * @param  {number} y  The Y coordinate of the point to check.
+  * @param  {number} x1 The X coordinate of the line starting point.
+  * @param  {number} y1 The Y coordinate of the line starting point.
+  * @param  {number} x2 The X coordinate of the line ending point.
+  * @param  {number} y2 The Y coordinate of the line ending point.
+  * @param  {number} w  The line thickness.
+  * @param  {number} epsilon An adjustement parameter which may depend on the zoom ratio.
+  * @return {Boolean} Returns true if point is on the line segment, false otherwise.
+*/
+sigma.tools.isOnSegment = function(x ,y, x1, y1, x2, y2, w, epsilon) {
+  // see http://stackoverflow.com/questions/328107/how-can-you-determine-a-point-is-between-two-other-points-on-a-line-segment
+  if (Math.min(x1, x2) < x && x < Math.max(x1, x2) && 
+      Math.min(y1, y2) < y && y < Math.max(y1, y2)) {  //bounding box
+    return Math.abs((y - y1) * (x2 - x1) - (x - x1) * (y2 - y1)) < w * epsilon; //crossproduct < edge thickness
+  }
+  return false;
+};
+
+/**
+  * Compute the coordinates of the point positioned
+  * at length t in the quadratic bezier curve.
+  * @param  {number} t  In [0,1] the step percentage to reach 
+  *                     the point in the curve from the context point.
+  * @param  {number} x1 The X coordinate of the context point.
+  * @param  {number} y1 The Y coordinate of the context point.
+  * @param  {number} x2 The X coordinate of the ending point.
+  * @param  {number} y2 The Y coordinate of the ending point.
+  * @param  {number} xi The X coordinate of the control point.
+  * @param  {number} yi The Y coordinate of the control point.
+  * @return {Object} Returns {x,y}.
+*/
+sigma.tools.pointOnQuadraticCurve = function(t, x1, y1, x2, y2, xi, yi) {
+  // see http://stackoverflow.com/questions/5634460/quadratic-bezier-curve-calculate-point
+  // see http://www.html5canvastutorials.com/tutorials/html5-canvas-quadratic-curves/
+  return {'x': Math.pow(1-t, 2) * x1 + 2 * (1-t) * t * xi + Math.pow(t, 2) * x2, 
+          'y': Math.pow(1-t, 2) * y1 + 2 * (1-t) * t * yi + Math.pow(t, 2) * y2};
+};
+
+/**
+  * Check if a point is on the quadratic bezier curve segment.
+  * @param  {number} x  The X coordinate of the point to check.
+  * @param  {number} y  The Y coordinate of the point to check.
+  * @param  {number} x1 The X coordinate of the line starting point.
+  * @param  {number} y1 The Y coordinate of the line starting point.
+  * @param  {number} x2 The X coordinate of the line ending point.
+  * @param  {number} y2 The Y coordinate of the line ending point.
+  * @param  {number} xi The X coordinate of the control point.
+  * @param  {number} yi The Y coordinate of the control point.
+  * @param  {number} w  The line thickness.
+  * @param  {number} epsilon An adjustement parameter which may depend on the zoom ratio.
+  * @return {Boolean} Returns true if point is on the line segment, false otherwise.
+*/
+sigma.tools.isOnQuadraticCurve = function(x ,y, x1, y1, x2, y2, xi, yi, w, epsilon) {
+  var dExtremities = Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+  if (Math.abs(x - x1) > dExtremities || Math.abs(y - y1) > dExtremities) {
+    return false;
+  }
+  var dP1 = Math.sqrt(Math.pow(x1 - x, 2) + Math.pow(y1 - y, 2)), //distance between the point and P1
+      dP2 = Math.sqrt(Math.pow(x2 - x, 2) + Math.pow(y2 - y, 2)); //distance between the point and P2
+  var _dt,
+      t = 0.5,
+      r = (dP1 < dP2) ? -0.1 : 0.1,
+      rThreshold = 0.025,
+      dThreshold = Math.log(1 + w) * epsilon / 20,
+      pt = sigma.tools.pointOnQuadraticCurve(t, x1, y1, x2, y2, xi, yi), // get x(t), y(t)
+      dt = Math.sqrt(Math.pow(x - pt.x, 2) + Math.pow(y - pt.y, 2)); // distance between the point and pt
+ // console.log('---------------');
+  while (t >= 0 && t <= 1 && 
+    (dt > dThreshold) && 
+    (r > rThreshold || r < -rThreshold)) {
+    // console.log(t);
+    _dt = dt;
+    pt = sigma.tools.pointOnQuadraticCurve(t, x1, y1, x2, y2, xi, yi);
+    dt = Math.sqrt(Math.pow(x - pt.x, 2) + Math.pow(y - pt.y, 2));
+    if (dt > _dt) { //not the right direction
+      r = -r / 2; // halfstep in the opposite direction
+      t += r;
+    } else if (t + r < 0 || t + r > 1) {  //oops, we've gone too far
+      r = r / 2;
+      dt = _dt; //revert, same player shoot again with a halfstep
+    } else {
+      t += r;
+    }
+  }
+  return dt < dThreshold;
+};

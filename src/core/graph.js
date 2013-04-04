@@ -670,7 +670,6 @@ function Graph() {
   function checkHoverEdge(mX, mY, mR, defaultEdgeType) {
     var dX1, dY1, dX2, dY2,
         x1, y1, x2, y2, s1, s2, w,
-        isBetweenExtremities, crossproduct, 
         oldH, newH,
         over = [], out = [];
     var epsilon = Math.abs(Math.log(1/ (mR * mR) )) * 18 || 100;
@@ -700,18 +699,15 @@ function Graph() {
         dX2 < s2 && dY2 < s2)) {
         switch (self.edgeType || defaultEdgeType) {
           case 'curve':
-            // var xi = (x1 + x2) / 2 + (y2 - y1) / 4;
-            // var yi = (y1 + y2) / 2 + (x1 - x2) / 4;
-            //TODO
+            var xi = (x1 + x2) / 2 + (y2 - y1) / 4;
+            var yi = (y1 + y2) / 2 + (x1 - x2) / 4;
+            newH = sigma.tools.isOnQuadraticCurve(mX ,mY, x1, y1, x2, y2, xi, yi, w, epsilon);
+            newH && over.push(edge.id);
           break;
           case 'line':
           default:
-            isBetweenExtremities = Math.min(x1, x2) < mX && mX < Math.max(x1, x2) && Math.min(y1, y2) < mY && mY < Math.max(y1, y2);
-            if (isBetweenExtremities) {
-              crossproduct = Math.abs((mY - y1) * (x2 - x1) - (mX - x1) * (y2 - y1));
-              newH = crossproduct < w * epsilon;
-              newH && over.push(edge.id);
-            }
+            newH = sigma.tools.isOnSegment(mX, mY, x1, y1, x2, y2, w, epsilon);
+            newH && over.push(edge.id);
           break;
         }
       }

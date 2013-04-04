@@ -598,7 +598,7 @@ function Sigma(root, id) {
         self.mousecaptor.mouseX,
         self.mousecaptor.mouseY,
         self.mousecaptor.ratio,
-        self.p.defaultEdgeType
+        self.plotter.p.defaultEdgeType
       );
 
       self.graph.edges.forEach(function(edge) {

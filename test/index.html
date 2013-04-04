@@ -50,11 +50,13 @@
     drawHoverEdges: true
   }).drawingProperties({
     // labelSize: 'proportional',
+    defaultEdgeType: 'curve',
     edgeColor: 'default',
     edgeHoverColor: 'default',
     defaultEdgeHoverColor: '#fff',
     edgeLabelSize: 'proportional',
     edgeLabelSizeRatio: 0.5,
+    edgeLabelThreshold: 6,
     defaultLabelColor: '#fff',
     defaultEdgeLabelHoverBGColor: '#333',
     edgeHoverSizeRatio: 1,
@@ -98,6 +100,8 @@
     });
     cluster.nodes.push('n'+i);
   }
+
+  // sigInst.addEdge(0,'n0','n1', {'size': (Math.random()*10)});
 
   for(i = 0; i < E; i++){
     if(Math.random() < 1-d){
