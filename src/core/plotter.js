@@ -113,9 +113,10 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, edgelabelsCtx, hoverCtx, edgehov
     //   - default (defaultEdgeHoverLabelColor will be used instead)
     edgeHoverLabelColor: 'default',
     //   Edge label hover background color:
+    //   - 'none'
     //   - 'edge'
     //   - default (defaultEdgeHoverLabelBGColor will be used instead)
-    edgeHoverLabelBGColor: 'default',
+    edgeHoverLabelBGColor: 'edge',
 
     // ------
     // EDGES:
@@ -617,11 +618,6 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, edgelabelsCtx, hoverCtx, edgehov
                  fontSize + 'px ' +
                  (self.p.hoverFont || self.p.font || '');
 
-
-      ctx.strokeStyle = self.p.edgeHoverLabelBGColor == 'edge' ?
-                      (edge['color'] || self.p.defaultEdgeHoverColor) :
-                      self.p.defaultEdgeHoverLabelBGColor;
-
       // Label background:
       ctx.beginPath();
 
@@ -631,10 +627,29 @@ function Plotter(nodesCtx, edgesCtx, labelsCtx, edgelabelsCtx, hoverCtx, edgehov
       var textWidth = ctx.measureText(edge['label']).width;
 
       // Label:
-      ctx.strokeText(edge['label'],
-        Math.round(labelX - (textWidth / 2)),
-        Math.round(labelY + (fontSize / 2))
-      );
+      if (self.p.edgeHoverLabelBGColor != 'none') {
+        //BUGGY STROKE
+        // ctx.strokeStyle = self.p.edgeHoverLabelBGColor == 'edge' ?
+        //                 (edge['color'] || self.p.defaultEdgeHoverColor) :
+        //                 self.p.defaultEdgeHoverLabelBGColor;
+
+        // ctx.strokeText(edge['label'],
+        //   Math.round(labelX - (textWidth / 2)),
+        //   Math.round(labelY + (fontSize / 2))
+        // );
+        ctx.fillStyle = self.p.edgeHoverLabelBGColor == 'edge' ?
+                        (edge['color'] || self.p.defaultEdgeHoverColor) :
+                        self.p.defaultEdgeHoverLabelBGColor;
+
+        sigma.tools.drawRect(
+          ctx,
+          Math.round(labelX - (textWidth / 2)),
+          Math.round(labelY + (fontSize / 2)),
+          textWidth,
+          fontSize);
+        ctx.closePath();
+        ctx.fill();
+      }
 
       ctx.fillStyle = self.p.edgeHoverLabelColor == 'edge' ?
                       (edge['color'] || self.p.defaultEdgeHoverColor) :
