@@ -207,6 +207,10 @@ function SigmaPublic(sigmaInstance) {
     self.dispatch(e.type, e.content);
   });
 
+  s.mousecaptor.bind('drag', function(e) {
+    self.dispatch(e.type, e.content);
+  });
+
   s.graph.bind('overnodes outnodes overedges outedges', function(e) {
     self.dispatch(e.type, e.content);
   });
