@@ -786,11 +786,11 @@ function Graph() {
     var a = (ids instanceof Array ? ids : [ids]) || [];
 
     if (self.p.safe) {
-      a.map(function(id) {
+      a = a.map(function(id) {
         return cloneNode(self.nodesIndex[id]);
       });
     } else {
-      a.map(function(id) {
+      a = a.map(function(id) {
         return self.nodesIndex[id];
       });
     }
